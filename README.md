@@ -61,23 +61,23 @@ You should check `login:avatar` permission so that your serverless site can use 
 Create `variables.json` file in project root with values filled with values for your project. You can use `variables-template.json` as template for this step
 
 * `folder-id` - your Yandex Cloud folder id
-* `domain` - your site's domain (e.g. API Gateway's technical domain without `https://`)
+* `domain` - your site's domain (e.g. API Gateway's technical domain without `https://`, In the Management Console, select the directory that contains the API gateway. From the list of services, choose API Gateway and click on the created API gateway.Save the value of the Service Domain field.)
 * `oauth-client-id` - ClientID of your registered Yandex OAuth application
-* `database` - path to your Yandex Database begins with `/ru-central1/`
-* `database-endpoint` - Yandex Database endpoint (you need substring between `grpcs://` and `/?database=`)
+* `database` - path to your Yandex Database that should start with /ru-central1/
+* `database-endpoint` - Yandex Database endpoint (the substring between grpcs:// and /?database=)
 * `yc-profile` - Yandex Cloud command line tool profile name
 * `secure-config-path` - path to JSON config with secrets
 * `storage-bucket` - Yandex Object Storage bucket name
 * `gateway-id` - id of your API Gateway
 
-Also you can get `database` and `database-endpoint` values from the terminal command above:
+You can get `database` and `database-endpoint` values from the terminal command above:
 
 ```bash
-yc ydb database get alice --format json | jq -r '.endpoint' 
-
-grpcs://ydb.serverless.yandexcloud.net:2135/?database=/ru-central1/*******************/********************* 
-        <--------------------------------->           <---------------------------------------------------->
-                     endpoint                                            database path
+yc ydb database get alice --format json | jq -r '.endpoint' | {
+  read -r FULL_CONNECTION
+  echo "Endpoint: $(awk -F'[?]' '{print $1}' <<< "$FULL_CONNECTION" | sed 's/grpcs:\/\///')"
+  echo "Database Path: $(sed -n 's/.*database=\([^&]*\).*/\1/p' <<< "$FULL_CONNECTION")"
+}
 ```
 
 ### Secret variables
@@ -95,13 +95,11 @@ To generate keys, use the following commands:
 1. **Hash (64 bytes):**
 
    ```bash
-   hash=$(openssl rand -base64 64)
-   echo "Hash: $hash"
+   hash=$(openssl rand -base64 64) | echo "Hash: $hash"
 2. **Block (32 bytes):**
 
    ```bash
-   block=$(openssl rand -base64 32)
-   echo "Block: $block"
+   block=$(openssl rand -base64 32) | echo "Block: $block"
    ```
 
 ## Deploying
@@ -124,7 +122,15 @@ Go to `frontend` directory and build static files with
 
 `npm run build`
 
-If you have a problem with build or installing npm, you may try ```npm install --legacy-peer-deps && npm install --force```
+If you have a problem like :
+
+```bash
+npm ERR! Could not resolve dependency:
+npm ERR! peer react@"^16.8.0" from old-library@1.0.0
+npm ERR! Found react@18.2.0
+```
+
+you have a package version conflict, you may try ```npm install --legacy-peer-deps && npm install --force``` it will ignore uncompareble dependances and installs packages bypassing the checks.
 
 Run `./upload_static.sh` at project root to upload static files to Object Storage.
 
