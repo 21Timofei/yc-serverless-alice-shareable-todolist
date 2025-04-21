@@ -18,8 +18,8 @@ In this scenario, you will develop a skill for Alice and deploy a web app for cr
 * [jq](https://stedolan.github.io/jq/)
 * [Terraform](http://terraform.io)
 * [AWS command line tool](https://aws.amazon.com/ru/cli/)
-* Node.js
-* go
+* Node.js (22.14.0)
+* go (1.21)
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ Configure aws cli following [instructions](https://cloud.yandex.ru/docs/storage/
 
 Create [API Gateway](https://cloud.yandex.ru/docs/api-gateway/) with any name and default specification. Id of created gateway will be used in project configuration.
 
-### Create Yandex Database 
+### Create Yandex Database
 
 [Find out](https://cloud.yandex.ru/docs/ydb/) how to create Yandex Database in serverless mode. DB schema will be applied later. Database name and endpoint will be used in project configuration.
 
@@ -46,6 +46,7 @@ Create [API Gateway](https://cloud.yandex.ru/docs/api-gateway/) with any name an
 Go to [Yandex OAuth](http://oauth.yandex.ru) service and create new application.
 You can use any name you like.
 You should check "WEB service platfrom" and provide at least two callback URIs:
+
 * `<apigateway technical domain>/yandex-oauth`
 * `https://social.yandex.net/broker/redirect`
 
@@ -60,16 +61,27 @@ You should check `login:avatar` permission so that your serverless site can use 
 Create `variables.json` file in project root with values filled with values for your project. You can use `variables-template.json` as template for this step
 
 * `folder-id` - your Yandex Cloud folder id
-* `domain` - your site's domain (e.g. API Gateway's technical domain)
-* `oauth-client-id` - ID of your registered Yandex OAuth application
-* `database` - Yandex Database name
-* `database-endpoint` - Yandex Database endpoint
+* `domain` - your site's domain (e.g. API Gateway's technical domain without `https://`)
+* `oauth-client-id` - ClientID of your registered Yandex OAuth application
+* `database` - path to your Yandex Database begins with `/ru-central1/`
+* `database-endpoint` - Yandex Database endpoint (you need substring between `grpcs://` and `/?database=`)
 * `yc-profile` - Yandex Cloud command line tool profile name
 * `secure-config-path` - path to JSON config with secrets
 * `storage-bucket` - Yandex Object Storage bucket name
 * `gateway-id` - id of your API Gateway
 
+Also you can get `database` and `database-endpoint` values from the terminal command above:
+
+```bash
+yc ydb database get alice --format json | jq -r '.endpoint' 
+
+grpcs://ydb.serverless.yandexcloud.net:2135/?database=/ru-central1/*******************/********************* 
+        <--------------------------------->           <---------------------------------------------------->
+                     endpoint                                            database path
+```
+
 ### Secret variables
+
 Create `secure-config.json` file anywhere on your machine (don't forget to refer to it's destination from `variables.json`). Use `secure-config-template.json` as template for your file
 
 * `session_keys` - generated secret keys used in session management
@@ -77,6 +89,20 @@ Keys can be generated:
   * **hash** - base64-encoded 64-bytes random value
   * **block** - base64-encoded 32-bytes random value
 * `oauth_secret` - secret (password) of Yandex OAuth application you created
+
+To generate keys, use the following commands:
+
+1. **Hash (64 bytes):**
+
+   ```bash
+   hash=$(openssl rand -base64 64)
+   echo "Hash: $hash"
+2. **Block (32 bytes):**
+
+   ```bash
+   block=$(openssl rand -base64 32)
+   echo "Block: $block"
+   ```
 
 ## Deploying
 
@@ -97,6 +123,8 @@ Where `OAuth token` - [OAuth token](https://cloud.yandex.ru/docs/iam/concepts/au
 Go to `frontend` directory and build static files with
 
 `npm run build`
+
+If you have a problem with build or installing npm, you may try ```npm install --legacy-peer-deps && npm install --force```
 
 Run `./upload_static.sh` at project root to upload static files to Object Storage.
 
