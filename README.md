@@ -47,7 +47,7 @@ Go to [Yandex OAuth](http://oauth.yandex.ru) service and create new application.
 You can use any name you like.
 You should check "WEB service platfrom" and provide at least two callback URIs:
 
-* `<apigateway technical domain>/yandex-oauth`
+* `<apigateway technical domain>/receive-token`
 * `https://social.yandex.net/broker/redirect`
 
 Use technical domain registered for API Gateway you created earlier.
@@ -61,7 +61,7 @@ You should check `login:avatar` permission so that your serverless site can use 
 Create `variables.json` file in project root with values filled with values for your project. You can use `variables-template.json` as template for this step
 
 * `folder-id` - your Yandex Cloud folder id
-* `domain` - your site's domain (e.g. API Gateway's technical domain without `https://`, In the Management Console, select the directory that contains the API gateway. From the list of services, choose API Gateway and click on the created API gateway.Save the value of the Service Domain field.)
+* `domain` - your site's domain (e.g. API Gateway's technical domain without https://) In the Management Console, select the directory that contains the API gateway. From the list of services, choose API Gateway and click on the created API gateway. Save the Service Domain field value.
 * `oauth-client-id` - ClientID of your registered Yandex OAuth application
 * `database` - path to your Yandex Database that should start with /ru-central1/
 * `database-endpoint` - Yandex Database endpoint (the substring between grpcs:// and /?database=)
@@ -95,11 +95,13 @@ To generate keys, use the following commands:
 1. **Hash (64 bytes):**
 
    ```bash
-   hash=$(openssl rand -base64 64) | echo "Hash: $hash"
+    echo "Hash: $(openssl rand -base64 64)"
+    ```
+
 2. **Block (32 bytes):**
 
    ```bash
-   block=$(openssl rand -base64 32) | echo "Block: $block"
+   echo "Block: $(openssl rand -base64 32)"
    ```
 
 ## Deploying
